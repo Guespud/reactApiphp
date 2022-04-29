@@ -9,6 +9,7 @@ function App() {
   const [data, setData] = useState([]);
   const [modalInsertar, setModalInsertar] = useState(false);
   const [modalEditar, setModalEditar] = useState(false);
+  const [modalEliminar, setModalEliminar]= useState(false);
   const [dataUsario, setDataUsario] = useState({
     id: "",
     name: "",
@@ -29,14 +30,13 @@ function App() {
     console.log(dataUsario);
   };
 
-  const seleccionarUsuario = (usuario,caso) =>{
-
+  const seleccionarUsuario = (usuario, caso) => {
     setDataUsario(usuario);
 
- abrirCerrarModalEditar()
-
-  }
-
+    (caso==="Editar")?
+    abrirCerrarModalEditar():
+    abrirCerrarModalEliminar()
+  };
 
   const abrirCerrarModalInsertar = () => {
     setModalInsertar(!modalInsertar);
@@ -45,6 +45,10 @@ function App() {
   const abrirCerrarModalEditar = () => {
     setModalEditar(!modalEditar);
   };
+
+   const abrirCerrarModalEliminar=()=>{
+    setModalEliminar(!modalEliminar);
+  }
 
   const peticionGet = async () => {
     await axios.get(baseUrl).then((response) => {
@@ -70,30 +74,47 @@ function App() {
 
   const peticionPut = async () => {
     var f = new FormData();
-
     f.append("id", dataUsario.id);
     f.append("name", dataUsario.name);
     f.append("email", dataUsario.email);
     f.append("city", dataUsario.city);
     f.append("country", dataUsario.country);
     f.append("job", dataUsario.job);
-    f.append("METHOD", "POST");
-
-    await axios.post(baseUrl, f,{params:{id: dataUsario.id}}).then((response) => {
-      var dataNueva = data;
-      dataNueva.map( Usuario => {
-        if(Usuario.id === dataUsario.id ){
-          Usuario.id = dataUsario.id
-          Usuario.name = dataUsario.name
-          Usuario.email = dataUsario.email
-          Usuario.city = dataUsario.city
-          Usuario.country = dataUsario.country
-          Usuario.job = dataUsario.job
-        }
+    f.append("METHOD", "PUT");
+    await axios
+      .post(baseUrl, f, { params: { id: dataUsario.id } })
+      .then((response) => {
+        var dataNueva = data;
+        dataNueva.map((Usuario) => {
+          if (Usuario.id === dataUsario.id) {
+            Usuario.id = dataUsario.id;
+            Usuario.name = dataUsario.name;
+            Usuario.email = dataUsario.email;
+            Usuario.city = dataUsario.city;
+            Usuario.country = dataUsario.country;
+            Usuario.job = dataUsario.job;
+          }
+        });
+        setData(dataNueva);
+        abrirCerrarModalEditar();
       })
-      setData(dataNueva);
-      abrirCerrarModalEditar();
-    });
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
+  const peticionDelete = async () => {
+    var f = new FormData();
+    f.append("METHOD", "DELETE");
+    await axios
+      .post(baseUrl, f, { params: { id: dataUsario.id } })
+      .then((response) => {
+        setData(data.filter((Usuario) => Usuario.id !== dataUsario.id));
+        abrirCerrarModalEliminar();
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   useEffect(() => {
@@ -130,9 +151,14 @@ function App() {
               <td>{Data.job}</td>
               <td>{Data.email}</td>
               <td>
-                <button className="btn btn-primary" onClick={() => seleccionarUsuario(Data)}>Editar</button>
+                <button
+                  className="btn btn-primary"
+                  onClick={()=>seleccionarUsuario(Data, "Editar")}
+                >
+                  Editar
+                </button>
                 &nbsp;
-                <button className="btn btn-danger">Eliminar</button>
+                <button className="btn btn-danger" onClick={()=>seleccionarUsuario(Data, "Eliminar")}>Eliminar</button>
               </td>
             </tr>
           ))}
@@ -207,8 +233,6 @@ function App() {
         </ModalFooter>
       </Modal>
 
-
-
       <Modal isOpen={modalEditar}>
         <ModalHeader>Editar Contacto</ModalHeader>
         <ModalBody>
@@ -282,9 +306,26 @@ function App() {
           </button>
         </ModalFooter>
       </Modal>
+
+
+      <Modal isOpen={modalEliminar}>
+        <ModalBody>
+        ¿Estás seguro que deseas eliminar el Framework {dataUsario && dataUsario.nombre}?
+        </ModalBody>
+        <ModalFooter>
+          <button className="btn btn-danger" onClick={()=>peticionDelete()}>
+            Sí
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={()=>abrirCerrarModalEliminar()}
+          >
+            No
+          </button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }
 
 export default App;
-
